@@ -1,130 +1,486 @@
-# Project Polaris – Space Mission Data Operations Platform
+# 🚀 Project Polaris — Space Mission Data Operations Platform
 
-Project Polaris is a lightweight, educational Space Mission Management Portal and DevOps case study. The application simulates space research operations monitoring satellites, space missions, and telemetry data, while keeping a clean, modular structure that's easy to digest and explain.
+## 1. Project Overview
 
----
-
-## Technology Stack
-
-- **Backend**: Python 3 (Flask Framework)
-- **Database**: SQLite3
-- **Frontend**: Responsive HTML5, Vanilla CSS3 (Custom Glassmorphism styling with CSS variables), and JavaScript
-- **Visualizations**: Chart.js (Loaded via CDN)
-- **DevOps Integrations**: Docker, Jenkinsfile, Terraform, Kubernetes
+Project Polaris is an educational, full-stack Space Mission Management Portal and DevOps case study. It provides a lightweight Flask-based web console to register satellites, schedule missions, and record telemetry. The project is complemented by a monitoring and logging toolchain (Prometheus, Grafana, ELK) and DevOps automation examples (Docker, Jenkins, Terraform, Kubernetes, Vault).
 
 ---
 
-## Key Features
+## 2. Problem Statement
 
-1. **Operations Dashboard**: View critical KPIs (Total Satellites, Active Missions, Telemetry logs count, Mission Success Rate), recent operations activity feeds, and mission stage status cards.
-2. **Theme Controls (Light/Dark Mode)**: Persistence theme toggle in the navigation bar using browser local storage state. Uses space-accented HSL/HEX colors.
-3. **Satellite Management**: Full CRUD operations (Add, View, Edit, Delete) for satellite assets.
-4. **Space Mission Coordination**: CRUD operations for scheduling space voyages, target bodies, and tracking statuses (Planning, Active, Completed, Failed).
-5. **Telemetry Logs**: Record diagnostic telemetry records (temperature, battery levels, signal strength) linked directly to registered satellites.
-6. **Analytics Portal**: Lightweight visual charts analyzing satellite active distribution and mission lifecycle counts.
+Teaching and demonstrating how a modern microservice-style application is deployed, monitored, logged, and secured in development and small-scale production environments is non-trivial.
 
----
+Polaris provides a compact reference stack that demonstrates:
 
-## Credentials (Hardcoded Admin)
-
-For academic evaluation simplicity, use the following credentials to access the console:
-- **Username**: `admin`
-- **Password**: `admin123`
+* Application metrics and monitoring
+* Centralized logging and observability
+* Secret management with Vault
+* Containerization using Docker
+* Infrastructure provisioning with Terraform
+* Kubernetes deployment concepts
 
 ---
 
-## Installation & Local Execution
+## 3. Objectives
 
-### Prerequisites
-- Python 3.8+ installed on your machine.
-
-### Setup Instructions
-1. Navigate to the project root directory:
-   ```bash
-   cd Space-Mission
-   ```
-
-2. (Optional but recommended) Create and activate a Python virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install required library dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the Flask application:
-   ```bash
-   python3 app.py
-   ```
-
-5. Open your web browser and navigate to:
-   ```text
-   http://127.0.0.1:5006/
-   ```
-   *Note: On initial startup, the application automatically creates and populates the SQLite database (`database/polaris.db`) with schemas and mock data.*
+* Provide a web UI to manage satellites, missions, and telemetry.
+* Demonstrate Prometheus and Grafana monitoring.
+* Demonstrate ELK Stack centralized logging.
+* Demonstrate Vault-based secret management.
+* Provide a containerized deployment environment.
+* Showcase Infrastructure as Code and Kubernetes deployment.
 
 ---
 
-## Docker Steps
+## 4. Features
 
-A ready-to-use `Dockerfile` is included to bundle and run the platform in a isolated container environment.
+### Application Features
 
-1. **Build the image**:
-   ```bash
-   docker build -t project-polaris:latest .
-   ```
+* User Authentication
+* Satellite Management (CRUD)
+* Mission Management (CRUD)
+* Telemetry Logging
+* Analytics Dashboard
+* Chart.js Visualizations
 
-2. **Launch the container**:
-   ```bash
-   docker run -d -p 5006:5006 --name polaris-app project-polaris:latest
-   ```
+### DevOps Features
 
-3. Open your browser at `http://localhost:5006` to access the application.
-
----
-
-## Jenkins Pipeline Overview
-
-The declarative `Jenkinsfile` at the root of the project defines a build pipeline:
-- **Build**: Compiles the application files and builds the Docker image.
-- **Test**: Conducts static syntax compilation verification using the `py_compile` module.
-- **Deploy**: A placeholder stage that logs successful staging or cluster shipping events.
+* Docker Containerization
+* Jenkins CI/CD Pipeline
+* Terraform Infrastructure Provisioning
+* Kubernetes Deployment
+* Prometheus Monitoring
+* Grafana Dashboards
+* ELK Logging Stack
+* HashiCorp Vault Integration
 
 ---
 
-## Terraform (AWS Infrastructure)
+## 5. Technology Stack
 
-The configurations inside the `terraform/` directory lay out standard infrastructure provisioning on AWS:
-- **VPC** & **Subnet**: Configures custom network bounds (`10.0.0.0/16` and a public subnet `10.0.1.0/24`).
-- **Internet Gateway** & **Route Table**: Routes public web traffic safely.
-- **Security Groups**: Restricts ingress rules to SSH (22), HTTP (80), and Flask Custom (5006) traffic.
-- **EC2 Instance**: Deploys a virtual `t2.micro` Linux server pre-configured with Docker services.
+| Category          | Technology                      |
+| ----------------- | ------------------------------- |
+| Backend           | Python 3.11, Flask              |
+| Database          | SQLite                          |
+| Monitoring        | Prometheus, Grafana             |
+| Logging           | Elasticsearch, Logstash, Kibana |
+| Secret Management | Vault                           |
+| CI/CD             | Jenkins                         |
+| Containerization  | Docker, Docker Compose          |
+| Orchestration     | Kubernetes                      |
+| IaC               | Terraform                       |
+| Frontend          | HTML, CSS, JavaScript, Chart.js |
 
-### Running Terraform:
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
+---
+
+## 6. Architecture
+
+### Application Flow
+
+```text
+User
+ ↓
+Flask Application
+ ↓
+SQLite Database
+```
+
+### Monitoring Flow
+
+```text
+Flask Metrics
+ ↓
+Prometheus
+ ↓
+Grafana
+```
+
+### Logging Flow
+
+```text
+Application Logs
+ ↓
+Logstash
+ ↓
+Elasticsearch
+ ↓
+Kibana
+```
+
+### Secret Management
+
+```text
+Vault
+ ↓
+Flask Application
 ```
 
 ---
 
-## Kubernetes Deployment
+## 7. Project Structure
 
-The resources in the `kubernetes/` folder show container scheduling onto cluster namespaces:
-- **deployment.yaml**: Schedules the app on `replicas: 2` to ensure high availability. Limits compute capacity to 500m CPU / 512Mi RAM.
-- **service.yaml**: Provisions a `NodePort` mapping node traffic from port `30080` to containers running on port `5006`.
-
-### Deploying on Kubernetes:
-```bash
-kubectl apply -f kubernetes/deployment.yaml
-kubectl apply -f kubernetes/service.yaml
+```text
+Space-Mission/
+│
+├── app.py
+├── Dockerfile
+├── docker-compose.yml
+├── Jenkinsfile
+├── requirements.txt
+│
+├── database/
+│   ├── schema.sql
+│   ├── sample_data.sql
+│   └── polaris.db
+│
+├── templates/
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── satellites.html
+│   ├── missions.html
+│   ├── telemetry.html
+│   └── analytics.html
+│
+├── static/
+│
+├── monitoring/
+│   ├── prometheus.yml
+│   └── grafana/
+│
+├── logging/
+│   ├── logstash.conf
+│   └── init-kibana.sh
+│
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+│
+├── kubernetes/
+│   ├── deployment.yaml
+│   └── service.yaml
+│
+├── vault/
+│
+└── README.md
 ```
-Verify the pods are running:
+
+---
+
+## 8. DevOps Components
+
+### Docker
+
+Build the Flask application container.
+
 ```bash
-kubectl get pods
+docker build -t project-polaris .
+```
+
+---
+
+### Jenkins
+
+Pipeline stages:
+
+```text
+Build
+ ↓
+Test
+ ↓
+Docker Build
+ ↓
+Deploy
+```
+
+---
+
+### Terraform
+
+Infrastructure provisioning:
+
+* VPC
+* Security Groups
+* EC2 Instance
+
+---
+
+### Kubernetes
+
+Resources:
+
+* Deployment
+* Service
+
+```yaml
+replicas: 2
+```
+
+---
+
+### Prometheus
+
+Scrapes:
+
+* Flask Application Metrics
+* Node Exporter Metrics
+
+---
+
+### Grafana
+
+Dashboard includes:
+
+* Application Status
+* CPU Usage
+* Memory Usage
+* Request Rate
+
+---
+
+### ELK Stack
+
+Components:
+
+* Elasticsearch
+* Logstash
+* Kibana
+
+Log Flow:
+
+```text
+Flask App
+ ↓
+Logstash
+ ↓
+Elasticsearch
+ ↓
+Kibana
+```
+
+---
+
+### Vault
+
+Stores:
+
+* secret_key
+* db_path
+
+---
+
+## 9. Installation
+
+### Clone Repository
+
+```bash
+git clone <repo-url>
+cd Space-Mission
+```
+
+### Install Dependencies
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+---
+
+## 10. Run with Docker Compose
+
+### Start Services
+
+```bash
+docker compose up --build -d
+```
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+---
+
+## 11. Access URLs
+
+| Service       | URL                   |
+| ------------- | --------------------- |
+| Flask App     | http://localhost:5006 |
+| Prometheus    | http://localhost:9090 |
+| Grafana       | http://localhost:3000 |
+| Kibana        | http://localhost:5601 |
+| Elasticsearch | http://localhost:9200 |
+| Vault         | http://localhost:8200 |
+| Jenkins       | http://localhost:8080 |
+
+---
+
+## 12. Monitoring
+
+### Prometheus Targets
+
+```bash
+http://localhost:9090/targets
+```
+
+### Grafana Dashboard
+
+Open:
+
+```bash
+http://localhost:3000
+```
+
+Dashboard:
+
+* Flask Status
+* CPU Usage
+* Memory Usage
+* Request Rate
+
+---
+
+## 13. Logging
+
+### Verify Elasticsearch Indices
+
+```bash
+curl http://localhost:9200/_cat/indices?v
+```
+
+### View Logs
+
+Open Kibana:
+
+```bash
+http://localhost:5601
+```
+
+Select:
+
+```text
+Polaris Logs
+```
+
+---
+
+## 14. Secret Management
+
+Vault stores:
+
+* secret_key
+* db_path
+
+Access:
+
+```bash
+http://localhost:8200
+```
+
+---
+
+## 15. Disaster Recovery
+
+### Database Backup
+
+```bash
+cp database/polaris.db backups/polaris.db.backup
+```
+
+### Recovery Strategy
+
+* Restore Database Backup
+* Redeploy Containers
+* Restart Services
+* Kubernetes Self-Healing
+
+### High Availability
+
+```yaml
+replicas: 2
+```
+
+If one pod fails:
+
+```text
+Pod 1 Down
+ ↓
+Pod 2 Running
+ ↓
+Application Available
+```
+
+---
+
+## 16. Screenshots
+
+### Login Page
+
+![Login](docs/screenshots/login.png)
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Satellites
+
+![Satellites](docs/screenshots/satellites.png)
+
+### Missions
+
+![Missions](docs/screenshots/missions.png)
+
+### Telemetry
+
+![Telemetry](docs/screenshots/telemetry.png)
+
+### Grafana Dashboard
+
+![Grafana](docs/screenshots/grafana-dashboard.png)
+
+---
+
+## 17. Future Enhancements
+
+* PostgreSQL/MySQL Integration
+* Production Vault Deployment
+* JWT Authentication
+* Alert Manager Integration
+* Slack Notifications
+* Kubernetes Health Checks
+* Helm Charts
+* Terraform Remote State
+
+---
+
+## 18. Author
+
+**Project Polaris – Space Mission Data Operations Platform**
+
+Developed as part of **DevOps Case Study 50**
+
+**Author:** Kinjal Gawali
+
+---
+
+## Quick Start
+
+```bash
+docker compose up --build -d
+```
+
+### Open
+
+* Flask: http://localhost:5006
+* Prometheus: http://localhost:9090
+* Grafana: http://localhost:3000
+* Kibana: http://localhost:5601
+* Vault: http://localhost:8200
+* Jenkins: http://localhost:8080
+
+```
 ```
