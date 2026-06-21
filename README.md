@@ -416,35 +416,8 @@ Application Available
 
 ---
 
-## 16. Screenshots
 
-### Login Page
-
-![Login](docs/screenshots/login.png)
-
-### Dashboard
-
-![Dashboard](docs/screenshots/dashboard.png)
-
-### Satellites
-
-![Satellites](docs/screenshots/satellites.png)
-
-### Missions
-
-![Missions](docs/screenshots/missions.png)
-
-### Telemetry
-
-![Telemetry](docs/screenshots/telemetry.png)
-
-### Grafana Dashboard
-
-![Grafana](docs/screenshots/grafana-dashboard.png)
-
----
-
-## 17. Future Enhancements
+## 16. Future Enhancements
 
 * PostgreSQL/MySQL Integration
 * Production Vault Deployment
@@ -457,7 +430,7 @@ Application Available
 
 ---
 
-## 18. Author
+## 17. Author
 
 **Project Polaris – Space Mission Data Operations Platform**
 
