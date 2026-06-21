@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telemetry Logs | Polaris Mission Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    (function() {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <a href="{{ url_for('dashboard') }}" class="nav-brand">
+        <!-- Satellite SVG icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="var(--palette-685a87)" stroke="var(--text-main)" stroke-width="1.4"/>
+          <line x1="9" y1="12" x2="4" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="1" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <line x1="15" y1="12" x2="20" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="20" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <line x1="12" y1="9" x2="12" y2="5.5" stroke="var(--text-main)" stroke-width="1.4"/>
+          <path d="M9.5 5.5 Q12 3 14.5 5.5" stroke="var(--text-main)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <circle cx="12" cy="5.5" r="0.8" fill="var(--palette-516e97)"/>
+        </svg>
+        <span>Polaris Mission Control</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+        <li><a href="{{ url_for('satellites') }}" class="nav-link">Satellites</a></li>
+        <li><a href="{{ url_for('missions') }}" class="nav-link">Missions</a></li>
+        <li><a href="{{ url_for('telemetry') }}" class="nav-link active">Telemetry</a></li>
+        <li><a href="{{ url_for('analytics') }}" class="nav-link">Analytics</a></li>
+      </ul>
+      <div class="nav-controls">
+        <div class="theme-switch-wrapper">
+          <label class="theme-switch" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <span class="nav-user">
+          <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24">
+            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          {{ session['username'] }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <span>{{ message }}</span>
+              <button class="close-flash" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Telemetry Operations</h1>
+        <p>Log, monitor, and query real-time diagnostics from operational satellites.</p>
+      </div>
+      {% if satellites %}
+        <button class="btn btn-primary" onclick="openAddDialog()">+ Log Telemetry</button>
+      {% else %}
+        <button class="btn btn-primary" disabled title="Add a satellite first">No Satellites Available</button>
+      {% endif %}
+    </div>
+
+    <!-- Telemetry Table -->
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Satellite</th>
+            <th>Temperature (°C)</th>
+            <th>Battery (%)</th>
+            <th>Signal Strength (dBm)</th>
+            <th>Timestamp</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in telemetry %}
+            <tr>
+              <td>{{ record.id }}</td>
+              <td><strong>{{ record.satellite_name }}</strong></td>
+              <td>{{ record.temperature }}°C</td>
+              <td>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span style="font-weight:600;">{{ record.battery_level }}%</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">
+                    ({% if record.battery_level > 50 %}Optimal{% else %}Critical{% endif %})
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span style="font-family:monospace; font-weight:600;">{{ record.signal_strength }} dBm</span>
+              </td>
+              <td>{{ record.timestamp }}</td>
+              <td>
+                <div class="action-cell">
+                  <button class="btn btn-secondary btn-sm" onclick="openEditDialog('{{ record.id }}', '{{ record.satellite_id }}', '{{ record.temperature }}', '{{ record.battery_level }}', '{{ record.signal_strength }}', '{{ record.timestamp }}')">Edit</button>
+                  <form action="{{ url_for('delete_telemetry', id=record.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this telemetry log?');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          {% if not telemetry %}
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No telemetry data logged.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Native Add Dialog -->
+    <dialog id="add-dialog">
+      <div class="dialog-header">
+        <h3>Log Telemetry Record</h3>
+        <button class="btn-close-dialog" onclick="document.getElementById('add-dialog').close()">&times;</button>
+      </div>
+      <form action="{{ url_for('telemetry') }}" method="POST">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group">
+          <label for="add-satellite">Satellite Node</label>
+          <select id="add-satellite" name="satellite_id" class="form-control" required>
+            {% for sat in satellites %}
+              <option value="{{ sat.id }}">{{ sat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="add-temperature">Core Temperature (°C)</label>
+          <input type="number" step="0.1" id="add-temperature" name="temperature" class="form-control" placeholder="e.g. 24.5" required>
+        </div>
+        <div class="form-group">
+          <label for="add-battery">Battery Level (%)</label>
+          <input type="number" step="0.1" min="0" max="100" id="add-battery" name="battery_level" class="form-control" placeholder="e.g. 98.5" required>
+        </div>
+        <div class="form-group">
+          <label for="add-signal">Signal Strength (dBm)</label>
+          <input type="number" step="0.1" max="0" id="add-signal" name="signal_strength" class="form-control" placeholder="e.g. -55.0" required>
+        </div>
+        <div class="form-group">
+          <label for="add-timestamp">Timestamp</label>
+          <input type="text" id="add-timestamp" name="timestamp" class="form-control" placeholder="YYYY-MM-DD HH:MM:SS" required>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-dialog').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Log Record</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Native Edit Dialog -->
+    <dialog id="edit-dialog">
+      <div class="dialog-header">
+        <h3>Edit Telemetry Record</h3>
+        <button class="btn-close-dialog" onclick="document.getElementById('edit-dialog').close()">&times;</button>
+      </div>
+      <form action="{{ url_for('telemetry') }}" method="POST">
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" id="edit-id" name="id">
+        <div class="form-group">
+          <label for="edit-satellite">Satellite Node</label>
+          <select id="edit-satellite" name="satellite_id" class="form-control" required>
+            {% for sat in satellites %}
+              <option value="{{ sat.id }}">{{ sat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-temperature">Core Temperature (°C)</label>
+          <input type="number" step="0.1" id="edit-temperature" name="temperature" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-battery">Battery Level (%)</label>
+          <input type="number" step="0.1" min="0" max="100" id="edit-battery" name="battery_level" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-signal">Signal Strength (dBm)</label>
+          <input type="number" step="0.1" max="0" id="edit-signal" name="signal_strength" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-timestamp">Timestamp</label>
+          <input type="text" id="edit-timestamp" name="timestamp" class="form-control" required>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-dialog').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </dialog>
+
+  </main>
+
+  <footer>
+    <p>Polaris Mission Control &copy; 2026 - Space Mission Operations Command Center</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toggle = document.getElementById("theme-toggle");
+      const currentTheme = localStorage.getItem("theme") || "light";
+      
+      if (toggle) {
+        toggle.checked = currentTheme === "dark";
+        toggle.addEventListener("change", function() {
+          const theme = this.checked ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          localStorage.setItem("theme", theme);
+        });
+      }
+    });
+
+    const addDialog = document.getElementById('add-dialog');
+    const editDialog = document.getElementById('edit-dialog');
+
+    function formatDate(date) {
+      const pad = (num) => String(num).padStart(2, '0');
+      return date.getFullYear() + '-' +
+        pad(date.getMonth() + 1) + '-' +
+        pad(date.getDate()) + ' ' +
+        pad(date.getHours()) + ':' +
+        pad(date.getMinutes()) + ':' +
+        pad(date.getSeconds());
+    }
+
+    function openAddDialog() {
+      document.getElementById('add-timestamp').value = formatDate(new Date());
+      addDialog.showModal();
+    }
+
+    function openEditDialog(id, satelliteId, temperature, batteryLevel, signalStrength, timestamp) {
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-satellite').value = satelliteId;
+      document.getElementById('edit-temperature').value = temperature;
+      document.getElementById('edit-battery').value = batteryLevel;
+      document.getElementById('edit-signal').value = signalStrength;
+      document.getElementById('edit-timestamp').value = timestamp;
+      editDialog.showModal();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Polaris Mission Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    // Prevent flash of unstyled theme
+    (function() {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    })();
+  </script>
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.5 16.5c-1.5 1.26-2.5 3.19-2.5 5.5h6.5c0-2.31-1-4.24-2.5-5.5z"/>
+        <path d="M12 2C9 6.5 9 14 9 17h6c0-3 0-10.5-3-15z"/>
+        <path d="M19.5 16.5c1.5 1.26 2.5 3.19 2.5 5.5h-6.5c0-2.31 1-4.24 2.5-5.5z"/>
+        <circle cx="12" cy="10" r="2"/>
+      </svg>
+      <h1>Polaris Mission Control</h1>
+      <p>Space Operations Command</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <span>{{ message }}</span>
+              <button class="close-flash" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="POST">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control" placeholder="Enter admin username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="Enter admin password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Authenticate</button>
+    </form>
+  </div>
+</body>
+</html>

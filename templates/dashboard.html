@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operations Dashboard | Polaris Mission Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    (function() {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <a href="{{ url_for('dashboard') }}" class="nav-brand">
+        <!-- Satellite SVG icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+          <!-- Main satellite body -->
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="var(--palette-685a87)" stroke="var(--text-main)" stroke-width="1.4"/>
+          <!-- Left solar panel arm -->
+          <line x1="9" y1="12" x2="4" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="1" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <!-- Right solar panel arm -->
+          <line x1="15" y1="12" x2="20" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="20" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <!-- Dish antenna -->
+          <line x1="12" y1="9" x2="12" y2="5.5" stroke="var(--text-main)" stroke-width="1.4"/>
+          <path d="M9.5 5.5 Q12 3 14.5 5.5" stroke="var(--text-main)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <!-- Signal dot on dish -->
+          <circle cx="12" cy="5.5" r="0.8" fill="var(--palette-516e97)"/>
+        </svg>
+        <span>Polaris Mission Control</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="{{ url_for('dashboard') }}" class="nav-link active">Dashboard</a></li>
+        <li><a href="{{ url_for('satellites') }}" class="nav-link">Satellites</a></li>
+        <li><a href="{{ url_for('missions') }}" class="nav-link">Missions</a></li>
+        <li><a href="{{ url_for('telemetry') }}" class="nav-link">Telemetry</a></li>
+        <li><a href="{{ url_for('analytics') }}" class="nav-link">Analytics</a></li>
+      </ul>
+      <div class="nav-controls">
+        <div class="theme-switch-wrapper">
+          <label class="theme-switch" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <span class="nav-user">
+          <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24">
+            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          {{ session['username'] }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <span>{{ message }}</span>
+              <button class="close-flash" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Mission Control Center</h1>
+        <p>Monitor satellite networks, telemetry streams, mission health, and deep-space operations in real time.</p>
+      </div>
+      <div class="header-illustration">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="hero-illustration" aria-label="Space mission control illustration" role="img">
+          <defs>
+            <!-- Planet body gradient -->
+            <radialGradient id="planetGrad" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="var(--palette-98a9d0)" stop-opacity="0.6"/>
+              <stop offset="60%" stop-color="var(--palette-516e97)" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="var(--palette-394462)" stop-opacity="0.7"/>
+            </radialGradient>
+            <!-- Glow filter -->
+            <filter id="glowFilter" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <!-- Satellite glow -->
+            <filter id="satGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- ── Ambient stars ── -->
+          <circle cx="12" cy="14" r="1" fill="var(--palette-98a9d0)" opacity="0.7"/>
+          <circle cx="108" cy="22" r="1.2" fill="var(--palette-e6d7e0)" opacity="0.6"/>
+          <circle cx="18" cy="95" r="0.8" fill="var(--palette-98a9d0)" opacity="0.5"/>
+          <circle cx="105" cy="88" r="1" fill="var(--palette-e6d7e0)" opacity="0.6"/>
+          <circle cx="98" cy="12" r="0.7" fill="var(--palette-b391b9)" opacity="0.5"/>
+          <circle cx="6" cy="55" r="0.8" fill="var(--palette-98a9d0)" opacity="0.4"/>
+
+          <!-- ── Outer dashed orbit ring ── -->
+          <ellipse cx="58" cy="60" rx="52" ry="17"
+                   fill="none" stroke="var(--palette-516e97)" stroke-width="0.8"
+                   stroke-dasharray="4 3" opacity="0.35"
+                   transform="rotate(-20 58 60)"/>
+
+          <!-- ── Main orbit ellipse ── -->
+          <ellipse cx="58" cy="60" rx="48" ry="15"
+                   fill="none" stroke="var(--palette-685a87)" stroke-width="1.5"
+                   opacity="0.7" filter="url(#glowFilter)"
+                   transform="rotate(-20 58 60)"/>
+
+          <!-- ── Planet body ── -->
+          <circle cx="58" cy="60" r="22" fill="url(#planetGrad)" stroke="var(--palette-516e97)" stroke-width="1.5" opacity="0.95"/>
+
+          <!-- ── Planet latitude lines ── -->
+          <ellipse cx="58" cy="60" rx="22" ry="8"
+                   fill="none" stroke="var(--palette-98a9d0)" stroke-width="0.8" opacity="0.4"/>
+          <ellipse cx="58" cy="52" rx="18" ry="5"
+                   fill="none" stroke="var(--palette-98a9d0)" stroke-width="0.6" opacity="0.25"/>
+          <ellipse cx="58" cy="68" rx="18" ry="5"
+                   fill="none" stroke="var(--palette-98a9d0)" stroke-width="0.6" opacity="0.25"/>
+
+          <!-- ── Planet longitude line (vertical) ── -->
+          <path d="M58 38 Q68 60 58 82" fill="none" stroke="var(--palette-98a9d0)" stroke-width="0.7" opacity="0.3"/>
+          <path d="M58 38 Q48 60 58 82" fill="none" stroke="var(--palette-98a9d0)" stroke-width="0.7" opacity="0.3"/>
+
+          <!-- ── Planet highlight ── -->
+          <circle cx="50" cy="50" r="6" fill="var(--palette-e8e2dd)" opacity="0.12"/>
+
+          <!-- ── Satellite body ── -->
+          <g transform="translate(97, 28)" filter="url(#satGlow)">
+            <!-- Solar panel left arm -->
+            <line x1="-8" y1="0" x2="-4" y2="0" stroke="var(--palette-685a87)" stroke-width="1.2"/>
+            <rect x="-14" y="-4" width="6" height="8" rx="1"
+                  fill="var(--palette-b391b9)" stroke="var(--palette-685a87)" stroke-width="0.8" opacity="0.95"/>
+            <!-- Solar panel left grid lines -->
+            <line x1="-13" y1="-4" x2="-13" y2="4" stroke="var(--palette-685a87)" stroke-width="0.4" opacity="0.6"/>
+            <line x1="-11" y1="-4" x2="-11" y2="4" stroke="var(--palette-685a87)" stroke-width="0.4" opacity="0.6"/>
+
+            <!-- Satellite core -->
+            <rect x="-4" y="-4" width="8" height="8" rx="1.5"
+                  fill="var(--palette-516e97)" stroke="var(--palette-98a9d0)" stroke-width="1"/>
+            <!-- Core detail dot -->
+            <circle cx="0" cy="0" r="1.5" fill="var(--palette-e6d7e0)" opacity="0.9"/>
+
+            <!-- Solar panel right arm -->
+            <line x1="4" y1="0" x2="8" y2="0" stroke="var(--palette-685a87)" stroke-width="1.2"/>
+            <rect x="8" y="-4" width="6" height="8" rx="1"
+                  fill="var(--palette-b391b9)" stroke="var(--palette-685a87)" stroke-width="0.8" opacity="0.95"/>
+            <!-- Solar panel right grid lines -->
+            <line x1="9" y1="-4" x2="9" y2="4" stroke="var(--palette-685a87)" stroke-width="0.4" opacity="0.6"/>
+            <line x1="11" y1="-4" x2="11" y2="4" stroke="var(--palette-685a87)" stroke-width="0.4" opacity="0.6"/>
+
+            <!-- Dish antenna -->
+            <line x1="0" y1="-4" x2="0" y2="-8" stroke="var(--palette-98a9d0)" stroke-width="0.9"/>
+            <path d="M-3 -8 Q0 -11 3 -8" fill="none" stroke="var(--palette-98a9d0)" stroke-width="1.1" stroke-linecap="round"/>
+          </g>
+
+          <!-- ── Signal arcs from satellite ── -->
+          <path d="M 93 18 Q 80 12 72 20" fill="none"
+                stroke="var(--palette-b391b9)" stroke-width="0.9"
+                stroke-dasharray="2 2" opacity="0.55"/>
+          <path d="M 95 15 Q 79 7 68 17" fill="none"
+                stroke="var(--palette-b391b9)" stroke-width="0.7"
+                stroke-dasharray="1.5 2.5" opacity="0.35"/>
+
+          <!-- ── Signal dot near planet ── -->
+          <circle cx="72" cy="33" r="1.5" fill="var(--palette-b391b9)" opacity="0.8"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <!-- Satellites Card -->
+      <div class="card kpi-card">
+        <div class="kpi-info">
+          <h3>Total Satellites</h3>
+          <div class="number">{{ total_satellites }}</div>
+        </div>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M5,3H19A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3M5,5V9H9V5H5M11,5V9H13V5H11M15,5V9H19V5H15M5,11V13H9V11H5M11,11V13H13V11H11M15,11V13H19V11H15M5,15V19H9V15H5M11,15V19H13V15H11M15,15V19H19V15H15Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Active Missions Card -->
+      <div class="card kpi-card">
+        <div class="kpi-info">
+          <h3>Active Missions</h3>
+          <div class="number">{{ active_missions }}</div>
+        </div>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Telemetry Card -->
+      <div class="card kpi-card">
+        <div class="kpi-info">
+          <h3>Telemetry Logs</h3>
+          <div class="number">{{ total_telemetry }}</div>
+        </div>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3M4,9V12C4,14.21 7.58,16 12,16C16.42,16 20,14.21 20,12V9C20,11.21 16.42,13 12,13C7.58,13 4,11.21 4,9M4,14V17C4,19.21 7.58,21 12,21C16.42,21 20,19.21 20,17V14C20,16.21 16.42,18 12,18C7.58,18 4,16.21 4,14Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Success Rate Card -->
+      <div class="card kpi-card">
+        <div class="kpi-info">
+          <h3>Mission Success</h3>
+          <div class="number">{{ success_rate }}%</div>
+        </div>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary details section -->
+    <div class="dashboard-details">
+      <!-- Recent Operations logs -->
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+          </svg>
+          Recent Activity Feed
+        </div>
+        <div class="activity-list">
+          {% for telemetry in recent_telemetry %}
+            <div class="activity-item">
+              <div class="activity-badge telemetry"></div>
+              <div class="activity-content">
+                <p>Telemetry logged for <strong>{{ telemetry.sat_name }}</strong>: Temp = {{ telemetry.temperature }}°C | Batt = {{ telemetry.battery_level }}% | Sig = {{ telemetry.signal_strength }}dBm</p>
+                <div class="activity-time">{{ telemetry.timestamp }}</div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% for mission in recent_missions %}
+            <div class="activity-item">
+              <div class="activity-badge mission"></div>
+              <div class="activity-content">
+                <p>New Mission Registered: <strong>{{ mission.name }}</strong> (Target: {{ mission.target }}). Status: <span class="status-badge {{ mission.status.lower() }}">{{ mission.status }}</span></p>
+                <div class="activity-time">Commenced: {{ mission.start_date }}</div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% for satellite in recent_satellites %}
+            <div class="activity-item">
+              <div class="activity-badge satellite"></div>
+              <div class="activity-content">
+                <p>Asset Launch Check: <strong>{{ satellite.name }}</strong> launch date logged.</p>
+                <div class="activity-time">Launched: {{ satellite.launch_date }}</div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% if not recent_telemetry and not recent_missions and not recent_satellites %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">No recent operations recorded.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Mission Status Summary -->
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18Z"/>
+          </svg>
+          Mission Status Breakdown
+        </div>
+        <div class="mission-summary-list">
+          <div class="summary-row">
+            <span class="summary-label">
+              <span class="status-badge active" style="width: 12px; height: 12px; border-radius: 50%; padding: 0;"></span>
+              Active Missions
+            </span>
+            <span class="summary-count">{{ mission_status['Active'] }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">
+              <span class="status-badge planning" style="width: 12px; height: 12px; border-radius: 50%; padding: 0;"></span>
+              Planning Stage
+            </span>
+            <span class="summary-count">{{ mission_status['Planning'] }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">
+              <span class="status-badge completed" style="width: 12px; height: 12px; border-radius: 50%; padding: 0;"></span>
+              Completed Successfully
+            </span>
+            <span class="summary-count">{{ mission_status['Completed'] }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">
+              <span class="status-badge failed" style="width: 12px; height: 12px; border-radius: 50%; padding: 0;"></span>
+              Failed/Aborted
+            </span>
+            <span class="summary-count">{{ mission_status['Failed'] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Polaris Mission Control &copy; 2026 - Space Mission Operations Command Center</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toggle = document.getElementById("theme-toggle");
+      const currentTheme = localStorage.getItem("theme") || "light";
+      
+      if (toggle) {
+        toggle.checked = currentTheme === "dark";
+        toggle.addEventListener("change", function() {
+          const theme = this.checked ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          localStorage.setItem("theme", theme);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

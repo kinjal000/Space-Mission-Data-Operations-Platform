@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Satellites | Polaris Mission Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    (function() {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <a href="{{ url_for('dashboard') }}" class="nav-brand">
+        <!-- Satellite SVG icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+          <rect x="9" y="9" width="6" height="6" rx="1" fill="var(--palette-685a87)" stroke="var(--text-main)" stroke-width="1.4"/>
+          <line x1="9" y1="12" x2="4" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="1" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <line x1="15" y1="12" x2="20" y2="12" stroke="var(--text-main)" stroke-width="1.4"/>
+          <rect x="20" y="9.5" width="3" height="5" rx="0.5" fill="var(--palette-b391b9)" stroke="var(--text-main)" stroke-width="1.2"/>
+          <line x1="12" y1="9" x2="12" y2="5.5" stroke="var(--text-main)" stroke-width="1.4"/>
+          <path d="M9.5 5.5 Q12 3 14.5 5.5" stroke="var(--text-main)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <circle cx="12" cy="5.5" r="0.8" fill="var(--palette-516e97)"/>
+        </svg>
+        <span>Polaris Mission Control</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+        <li><a href="{{ url_for('satellites') }}" class="nav-link active">Satellites</a></li>
+        <li><a href="{{ url_for('missions') }}" class="nav-link">Missions</a></li>
+        <li><a href="{{ url_for('telemetry') }}" class="nav-link">Telemetry</a></li>
+        <li><a href="{{ url_for('analytics') }}" class="nav-link">Analytics</a></li>
+      </ul>
+      <div class="nav-controls">
+        <div class="theme-switch-wrapper">
+          <label class="theme-switch" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <span class="nav-user">
+          <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24">
+            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          {{ session['username'] }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <span>{{ message }}</span>
+              <button class="close-flash" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Satellite Assets</h1>
+        <p>Register, update, and track physical satellite telemetry nodes.</p>
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('add-dialog').showModal()">+ Add Satellite</button>
+    </div>
+
+    <!-- Satellites Table -->
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Satellite Name</th>
+            <th>Launch Date</th>
+            <th>Orbit Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sat in satellites %}
+            <tr>
+              <td>{{ sat.id }}</td>
+              <td><strong>{{ sat.name }}</strong></td>
+              <td>{{ sat.launch_date }}</td>
+              <td><span style="font-family: monospace; font-weight: 600;">{{ sat.orbit_type }}</span></td>
+              <td><span class="status-badge {{ sat.status.lower() }}">{{ sat.status }}</span></td>
+              <td>
+                <div class="action-cell">
+                  <button class="btn btn-secondary btn-sm" onclick="openEditDialog('{{ sat.id }}', '{{ sat.name }}', '{{ sat.launch_date }}', '{{ sat.orbit_type }}', '{{ sat.status }}')">Edit</button>
+                  <form action="{{ url_for('delete_satellite', id=sat.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete satellite {{ sat.name }}? This will delete all its telemetry logs.');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          {% if not satellites %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No satellite assets registered.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Native Add Dialog -->
+    <dialog id="add-dialog">
+      <div class="dialog-header">
+        <h3>Register Satellite</h3>
+        <button class="btn-close-dialog" onclick="document.getElementById('add-dialog').close()">&times;</button>
+      </div>
+      <form action="{{ url_for('satellites') }}" method="POST">
+        <input type="hidden" name="action" value="add">
+        <div class="form-group">
+          <label for="add-name">Satellite Name</label>
+          <input type="text" id="add-name" name="name" class="form-control" placeholder="e.g. Polaris-I" required>
+        </div>
+        <div class="form-group">
+          <label for="add-launch-date">Launch Date</label>
+          <input type="date" id="add-launch-date" name="launch_date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="add-orbit-type">Orbit Type</label>
+          <select id="add-orbit-type" name="orbit_type" class="form-control" required>
+            <option value="LEO">LEO (Low Earth Orbit)</option>
+            <option value="MEO">MEO (Medium Earth Orbit)</option>
+            <option value="GEO">GEO (Geostationary Orbit)</option>
+            <option value="HEO">HEO (Highly Elliptical Orbit)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="add-status">Operations Status</label>
+          <select id="add-status" name="status" class="form-control" required>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-dialog').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Register</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Native Edit Dialog -->
+    <dialog id="edit-dialog">
+      <div class="dialog-header">
+        <h3>Edit Satellite</h3>
+        <button class="btn-close-dialog" onclick="document.getElementById('edit-dialog').close()">&times;</button>
+      </div>
+      <form action="{{ url_for('satellites') }}" method="POST">
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" id="edit-id" name="id">
+        <div class="form-group">
+          <label for="edit-name">Satellite Name</label>
+          <input type="text" id="edit-name" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-launch-date">Launch Date</label>
+          <input type="date" id="edit-launch-date" name="launch_date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-orbit-type">Orbit Type</label>
+          <select id="edit-orbit-type" name="orbit_type" class="form-control" required>
+            <option value="LEO">LEO (Low Earth Orbit)</option>
+            <option value="MEO">MEO (Medium Earth Orbit)</option>
+            <option value="GEO">GEO (Geostationary Orbit)</option>
+            <option value="HEO">HEO (Highly Elliptical Orbit)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-status">Operations Status</label>
+          <select id="edit-status" name="status" class="form-control" required>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-dialog').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </dialog>
+
+  </main>
+
+  <footer>
+    <p>Polaris Mission Control &copy; 2026 - Space Mission Operations Command Center</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toggle = document.getElementById("theme-toggle");
+      const currentTheme = localStorage.getItem("theme") || "light";
+      
+      if (toggle) {
+        toggle.checked = currentTheme === "dark";
+        toggle.addEventListener("change", function() {
+          const theme = this.checked ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          localStorage.setItem("theme", theme);
+        });
+      }
+    });
+
+    const editDialog = document.getElementById('edit-dialog');
+    function openEditDialog(id, name, launchDate, orbitType, status) {
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-name').value = name;
+      document.getElementById('edit-launch-date').value = launchDate;
+      document.getElementById('edit-orbit-type').value = orbitType;
+      document.getElementById('edit-status').value = status;
+      editDialog.showModal();
+    }
+  </script>
+</body>
+</html>
